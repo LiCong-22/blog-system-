@@ -180,15 +180,14 @@ const readingTime = Math.ceil(title.length / 10 + description.length / 20 + 3);
 
 	.article-container {
 		position: relative;
-		padding-left: 280px;
 	}
 
 	.toc {
-		position: sticky;
-		left: 0;
-		top: 2rem;
-		width: 240px;
-		padding: 1.5rem;
+		position: fixed;
+		left: calc(50% - 440px);
+		top: 6rem;
+		width: 200px;
+		padding: 1rem 1.5rem;
 		background: #f8fafc;
 		border-radius: 12px;
 		display: none;
@@ -289,18 +288,19 @@ const readingTime = Math.ceil(title.length / 10 + description.length / 20 + 3);
 		color: var(--primary);
 	}
 
-	@media (min-width: 768px) {
+	@media (min-width: 1200px) {
 		.toc {
 			display: block;
 		}
 	}
 
-	@media (max-width: 768px) {
-		.article-container {
-			grid-template-columns: 1fr;
-			gap: 2rem;
+	@media (max-width: 1199px) {
+		.toc {
+			display: none !important;
 		}
+	}
 
+	@media (max-width: 768px) {
 		.post-header h1 {
 			font-size: 1.5rem;
 		}
