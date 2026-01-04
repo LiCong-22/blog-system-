@@ -180,12 +180,13 @@ const readingTime = Math.ceil(title.length / 10 + description.length / 20 + 3);
 
 	.article-container {
 		position: relative;
+		padding-left: 280px;
 	}
 
 	.toc {
-		position: absolute;
-		left: -280px;
-		top: 0;
+		position: sticky;
+		left: 0;
+		top: 2rem;
 		width: 240px;
 		padding: 1.5rem;
 		background: #f8fafc;
