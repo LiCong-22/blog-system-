@@ -1,0 +1,93 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+---
+
+<Layout title="我的博客" description="记录思考与学习">
+	<section class="intro">
+		<h1>欢迎来到我的博客</h1>
+		<p>这里记录了我与AI的对话、学习笔记和思考。</p>
+	</section>
+
+	<section class="posts">
+		<h2>最新文章</h2>
+		<ul class="post-list">
+			{posts.map((post) => (
+				<li>
+					<a href={`/posts/${post.id}/`}>
+						<h3>{post.data.title}</h3>
+						<p>{post.data.description}</p>
+						<time>{post.data.pubDate.toLocaleDateString('zh-CN')}</time>
+					</a>
+				</li>
+			))}
+		</ul>
+		{posts.length === 0 && (
+			<p class="empty">暂无文章，期待你的第一篇博客！</p>
+		)}
+	</section>
+</Layout>
+
+<style>
+	.intro {
+		text-align: center;
+		padding: 2rem 0 3rem;
+	}
+
+	.intro h1 {
+		font-size: 2.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.posts h2 {
+		margin-bottom: 1.5rem;
+	}
+
+	.post-list {
+		list-style: none;
+	}
+
+	.post-list li {
+		margin-bottom: 1rem;
+	}
+
+	.post-list a {
+		display: block;
+		padding: 1.5rem;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		text-decoration: none;
+		color: inherit;
+		transition: border-color 0.2s, box-shadow 0.2s;
+	}
+
+	.post-list a:hover {
+		border-color: var(--primary);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+
+	.post-list h3 {
+		color: var(--primary);
+		margin-bottom: 0.5rem;
+	}
+
+	.post-list p {
+		color: var(--gray);
+		margin-bottom: 0.5rem;
+	}
+
+	.post-list time {
+		font-size: 0.85rem;
+		color: var(--gray);
+	}
+
+	.empty {
+		text-align: center;
+		color: var(--gray);
+		padding: 2rem;
+	}
+</style>

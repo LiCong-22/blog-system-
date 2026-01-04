@@ -1,0 +1,112 @@
+---
+interface Props {
+	title: string;
+	description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content={description} />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body>
+		<header>
+			<nav>
+				<a href="/" class="logo">我的博客</a>
+				<div class="nav-links">
+					<a href="/">首页</a>
+					<a href="/tags">标签</a>
+					<a href="/about">关于</a>
+				</div>
+			</nav>
+		</header>
+		<main>
+			<slot />
+		</main>
+		<footer>
+			<p>&copy; {new Date().getFullYear()} 我的博客</p>
+		</footer>
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		--primary: #3b82f6;
+		--bg: #ffffff;
+		--text: #1f2937;
+		--gray: #6b7280;
+		--border: #e5e7eb;
+	}
+
+	* {
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
+	}
+
+	body {
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+		background: var(--bg);
+		color: var(--text);
+		line-height: 1.6;
+	}
+
+	header {
+		border-bottom: 1px solid var(--border);
+		padding: 1rem 2rem;
+	}
+
+	nav {
+		max-width: 800px;
+		margin: 0 auto;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.logo {
+		font-size: 1.25rem;
+		font-weight: bold;
+		color: var(--primary);
+		text-decoration: none;
+	}
+
+	.nav-links a {
+		margin-left: 1.5rem;
+		color: var(--gray);
+		text-decoration: none;
+	}
+
+	.nav-links a:hover {
+		color: var(--primary);
+	}
+
+	main {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 2rem;
+	}
+
+	footer {
+		text-align: center;
+		padding: 2rem;
+		color: var(--gray);
+		border-top: 1px solid var(--border);
+		margin-top: 2rem;
+	}
+
+	h1 { font-size: 2rem; margin-bottom: 1rem; }
+	h2 { font-size: 1.5rem; margin: 1.5rem 0 1rem; }
+	p { margin-bottom: 1rem; }
+	a { color: var(--primary); }
+	code { background: #f3f4f6; padding: 0.2rem 0.4rem; border-radius: 4px; }
+	pre { background: #1f2937; color: #fff; padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+</style>

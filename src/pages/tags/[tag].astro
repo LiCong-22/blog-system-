@@ -1,0 +1,63 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+	const posts = await getCollection('posts');
+	const tags = [...new Set(posts.flatMap(post => post.data.tags))];
+	return tags.map(tag => ({
+		params: { tag },
+		props: { tag, posts: posts.filter(p => p.data.tags.includes(tag)) },
+	}));
+}
+
+const { tag, posts } = Astro.props;
+---
+
+<Layout title={`标签: ${tag}`} description={`标签 ${tag} 下的文章`}>
+	<h1>#{tag}</h1>
+	<ul class="post-list">
+		{posts.map(post => (
+			<li>
+				<a href={`/posts/${post.id}/`}>
+					<h3>{post.data.title}</h3>
+					<time>{post.data.pubDate.toLocaleDateString('zh-CN')}</time>
+				</a>
+			</li>
+		))}
+	</ul>
+</Layout>
+
+<style>
+	.post-list {
+		list-style: none;
+		margin-top: 1.5rem;
+	}
+
+	.post-list li {
+		margin-bottom: 1rem;
+	}
+
+	.post-list a {
+		display: block;
+		padding: 1rem;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.post-list a:hover {
+		border-color: var(--primary);
+	}
+
+	.post-list h3 {
+		color: var(--primary);
+		margin-bottom: 0.25rem;
+	}
+
+	.post-list time {
+		font-size: 0.85rem;
+		color: var(--gray);
+	}
+</style>

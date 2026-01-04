@@ -1,0 +1,74 @@
+---
+import Layout from './Layout.astro';
+import type { CollectionEntry } from 'astro:content';
+
+type Props = CollectionEntry<'posts'>['data'];
+
+const { title, description, pubDate, updatedDate, tags } = Astro.props;
+
+const formattedDate = pubDate.toLocaleDateString('zh-CN', {
+	year: 'numeric',
+	month: 'long',
+	day: 'numeric',
+});
+---
+
+<Layout title={title} description={description}>
+	<article>
+		<header class="post-header">
+			<h1>{title}</h1>
+			<div class="meta">
+				<time>{formattedDate}</time>
+				{tags.length > 0 && (
+					<div class="tags">
+						{tags.map(tag => (
+							<span class="tag">#{tag}</span>
+						))}
+					</div>
+				)}
+			</div>
+		</header>
+		<div class="content">
+			<slot />
+		</div>
+	</article>
+</Layout>
+
+<style>
+	.post-header {
+		margin-bottom: 2rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.meta {
+		color: var(--gray);
+		font-size: 0.9rem;
+	}
+
+	.tags {
+		margin-top: 0.5rem;
+	}
+
+	.tag {
+		display: inline-block;
+		background: #eff6ff;
+		color: var(--primary);
+		padding: 0.2rem 0.6rem;
+		border-radius: 9999px;
+		font-size: 0.8rem;
+		margin-right: 0.5rem;
+	}
+
+	.content {
+		line-height: 1.8;
+	}
+
+	.content :global(h2) {
+		margin-top: 2rem;
+	}
+
+	.content :global(pre) {
+		margin: 1.5rem 0;
+	}
+</style>
