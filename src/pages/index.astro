@@ -5,23 +5,70 @@ import { getCollection } from 'astro:content';
 const posts = (await getCollection('posts')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
+
+// 统计数据
+const totalPosts = posts.length;
+const totalTags = [...new Set(posts.flatMap(post => post.data.tags))].length;
+
+// 计算阅读时间
+function getReadingTime(content: string): string {
+	const wordsPerMinute = 300;
+	const words = content.split(/\s+/).length;
+	const minutes = Math.ceil(words / wordsPerMinute);
+	return `${minutes} 分钟`;
+}
+
+// 获取纯文本内容用于计算阅读时间
+function getPlainContent(post: any): string {
+	return post.body || '';
+}
 ---
 
-<Layout title="我的博客" description="记录思考与学习">
-	<section class="intro">
-		<h1>欢迎来到我的博客</h1>
-		<p>这里记录了我与AI的对话、学习笔记和思考。</p>
+<Layout title="我的博客 | 记录思考与学习" description="记录与AI的对话、学习笔记和思考">
+	<!-- 搜索框 -->
+	<section class="search-section">
+		<div class="search-box">
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<circle cx="11" cy="11" r="8"></circle>
+				<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+			</svg>
+			<input type="text" id="search-input" placeholder="搜索文章..." />
+		</div>
 	</section>
 
+	<!-- 统计信息 -->
+	<section class="stats">
+		<div class="stat-item">
+			<span class="stat-number">{totalPosts}</span>
+			<span class="stat-label">篇文章</span>
+		</div>
+		<div class="stat-item">
+			<span class="stat-number">{totalTags}</span>
+			<span class="stat-label">个标签</span>
+		</div>
+	</section>
+
+	<!-- 文章列表 -->
 	<section class="posts">
-		<h2>最新文章</h2>
-		<ul class="post-list">
+		<h2>全部文章</h2>
+		<ul class="post-list" id="post-list">
 			{posts.map((post) => (
-				<li>
+				<li class="post-item" data-title={post.data.title.toLowerCase()} data-tags={post.data.tags.join(' ').toLowerCase()}>
 					<a href={`/posts/${post.id}/`}>
-						<h3>{post.data.title}</h3>
-						<p>{post.data.description}</p>
-						<time>{post.data.pubDate.toLocaleDateString('zh-CN')}</time>
+						<div class="post-header">
+							<h3>{post.data.title}</h3>
+							<div class="post-tags">
+								{post.data.tags.slice(0, 3).map(tag => (
+									<span class="tag">#{tag}</span>
+								))}
+							</div>
+						</div>
+						<p class="post-description">{post.data.description}</p>
+						<div class="post-meta">
+							<time>{post.data.pubDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
+							<span class="separator">•</span>
+							<span class="read-time">约 5 分钟阅读</span>
+						</div>
 					</a>
 				</li>
 			))}
@@ -29,65 +76,199 @@ const posts = (await getCollection('posts')).sort(
 		{posts.length === 0 && (
 			<p class="empty">暂无文章，期待你的第一篇博客！</p>
 		)}
+		<p class="no-results" id="no-results" style="display: none;">没有找到匹配的文章</p>
 	</section>
 </Layout>
 
+<script>
+	// 搜索功能
+	const searchInput = document.getElementById('search-input') as HTMLInputElement;
+	const postList = document.getElementById('post-list');
+	const postItems = postList?.querySelectorAll('.post-item');
+	const noResults = document.getElementById('no-results');
+
+	searchInput?.addEventListener('input', (e) => {
+		const query = (e.target as HTMLInputElement).value.toLowerCase();
+		let visibleCount = 0;
+
+		postItems?.forEach((item) => {
+			const postItem = item as HTMLElement;
+			const title = postItem.dataset.title || '';
+			const tags = postItem.dataset.tags || '';
+
+			if (title.includes(query) || tags.includes(query)) {
+				postItem.style.display = 'block';
+				visibleCount++;
+			} else {
+				postItem.style.display = 'none';
+			}
+		});
+
+		if (noResults) {
+			noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+		}
+	});
+</script>
+
 <style>
-	.intro {
-		text-align: center;
-		padding: 2rem 0 3rem;
+	.search-section {
+		margin-bottom: 2rem;
 	}
 
-	.intro h1 {
-		font-size: 2.5rem;
-		margin-bottom: 0.5rem;
+	.search-box {
+		display: flex;
+		align-items: center;
+		background: #f8fafc;
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		padding: 0.75rem 1rem;
+		transition: border-color 0.2s, box-shadow 0.2s;
+	}
+
+	.search-box:focus-within {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+	}
+
+	.search-box svg {
+		color: var(--gray);
+		margin-right: 0.75rem;
+	}
+
+	.search-box input {
+		flex: 1;
+		border: none;
+		background: transparent;
+		font-size: 1rem;
+		outline: none;
+		color: var(--text);
+	}
+
+	.search-box input::placeholder {
+		color: var(--gray);
+	}
+
+	.stats {
+		display: flex;
+		gap: 2rem;
+		margin-bottom: 2rem;
+		padding: 1.5rem;
+		background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+		border-radius: 12px;
+	}
+
+	.stat-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.stat-number {
+		font-size: 2rem;
+		font-weight: bold;
+		color: var(--primary);
+	}
+
+	.stat-label {
+		font-size: 0.875rem;
+		color: var(--gray);
 	}
 
 	.posts h2 {
 		margin-bottom: 1.5rem;
+		font-size: 1.25rem;
+		color: var(--gray);
 	}
 
 	.post-list {
 		list-style: none;
 	}
 
-	.post-list li {
+	.post-item {
 		margin-bottom: 1rem;
 	}
 
-	.post-list a {
+	.post-item a {
 		display: block;
 		padding: 1.5rem;
 		border: 1px solid var(--border);
-		border-radius: 8px;
+		border-radius: 12px;
 		text-decoration: none;
 		color: inherit;
-		transition: border-color 0.2s, box-shadow 0.2s;
+		transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 	}
 
-	.post-list a:hover {
+	.post-item a:hover {
 		border-color: var(--primary);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+		transform: translateY(-2px);
 	}
 
-	.post-list h3 {
+	.post-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		margin-bottom: 0.75rem;
+	}
+
+	.post-header h3 {
+		color: var(--text);
+		font-size: 1.125rem;
+		margin: 0;
+		flex: 1;
+		margin-right: 1rem;
+	}
+
+	.post-tags {
+		display: flex;
+		gap: 0.5rem;
+		flex-shrink: 0;
+	}
+
+	.tag {
+		background: #eff6ff;
 		color: var(--primary);
-		margin-bottom: 0.5rem;
+		padding: 0.2rem 0.5rem;
+		border-radius: 9999px;
+		font-size: 0.75rem;
 	}
 
-	.post-list p {
+	.post-description {
 		color: var(--gray);
-		margin-bottom: 0.5rem;
+		margin-bottom: 0.75rem;
+		line-height: 1.6;
 	}
 
-	.post-list time {
+	.post-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 		font-size: 0.85rem;
 		color: var(--gray);
 	}
 
-	.empty {
+	.separator {
+		color: var(--border);
+	}
+
+	.empty, .no-results {
 		text-align: center;
 		color: var(--gray);
-		padding: 2rem;
+		padding: 3rem;
+	}
+
+	@media (max-width: 640px) {
+		.stats {
+			gap: 1rem;
+		}
+
+		.post-header {
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+
+		.post-tags {
+			flex-wrap: wrap;
+		}
 	}
 </style>
