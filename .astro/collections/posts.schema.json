@@ -49,6 +49,9 @@
           },
           "default": []
         },
+        "password": {
+          "type": "string"
+        },
         "$schema": {
           "type": "string"
         }
