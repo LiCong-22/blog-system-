@@ -74,6 +74,6 @@ npm run build    # 构建生产版本
 
 ## 链接
 
-- 博客：https://my-blog-system-tau.vercel.app
-- RSS：https://my-blog-system-tau.vercel.app/rss.xml
+- 博客：https://blog-system-six-sepia.vercel.app
+- RSS：https://blog-system-six-sepia.vercel.app/rss.xml
 - 仓库：https://github.com/LiCong-22/blog-system-
