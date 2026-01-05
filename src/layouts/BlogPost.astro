@@ -4,7 +4,7 @@ import type { CollectionEntry } from 'astro:content';
 
 type Props = CollectionEntry<'posts'>['data'];
 
-const { title, description, pubDate, updatedDate, tags } = Astro.props;
+const { title, description, pubDate, updatedDate, tags, password } = Astro.props;
 
 const formattedDate = pubDate.toLocaleDateString('zh-CN', {
 	year: 'numeric',
@@ -12,41 +12,202 @@ const formattedDate = pubDate.toLocaleDateString('zh-CN', {
 	day: 'numeric',
 });
 
-// 估算阅读时间（按每分钟300字计算）
 const readingTime = Math.ceil(title.length / 10 + description.length / 20 + 3);
+
+// 获取文章 ID（用于本地存储 key）
+const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 ---
 
 <Layout title={title} description={description}>
-	<article>
-		<header class="post-header">
-			<h1>{title}</h1>
-			<div class="meta">
-				<span class="date">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-						<line x1="16" y1="2" x2="16" y2="6"></line>
-						<line x1="8" y1="2" x2="8" y2="6"></line>
-						<line x1="3" y1="10" x2="21" y2="10"></line>
-					</svg>
-					{formattedDate}
-				</span>
-				<span class="separator">•</span>
-				<span class="read-time">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<circle cx="12" cy="12" r="10"></circle>
-						<polyline points="12 6 12 12 16 14"></polyline>
-					</svg>
-					约 {readingTime} 分钟阅读
-				</span>
-			</div>
-			{tags.length > 0 && (
-				<div class="tags">
-					{tags.map(tag => (
-						<a href={`/tags/${tag}`} class="tag">#{tag}</a>
-					))}
+	{password ? (
+		<!-- 密码保护的文章 -->
+		<div id="locked-content" style="display: none;">
+			<article>
+				<header class="post-header">
+					<h1>{title}</h1>
+					<div class="meta">
+						<span class="date">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+								<line x1="16" y1="2" x2="16" y2="6"></line>
+								<line x1="8" y1="2" x2="8" y2="6"></line>
+								<line x1="3" y1="10" x2="21" y2="10"></line>
+							</svg>
+							{formattedDate}
+						</span>
+						<span class="separator">•</span>
+						<span class="read-time">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<circle cx="12" cy="12" r="10"></circle>
+								<polyline points="12 6 12 12 16 14"></polyline>
+							</svg>
+							约 {readingTime} 分钟阅读
+						</span>
+					</div>
+					{tags.length > 0 && (
+						<div class="tags">
+							{tags.map(tag => (
+								<a href={`/tags/${tag}`} class="tag">#{tag}</a>
+							))}
+						</div>
+					)}
+				</header>
+				<div class="article-container">
+					<aside class="toc">
+						<h3>目录</h3>
+						<nav id="toc-nav"></nav>
+					</aside>
+					<div class="content">
+						<slot />
+					</div>
 				</div>
-			)}
-		</header>
+			</article>
+		</div>
+
+		<!-- 密码输入界面 -->
+		<div id="password-form" class="locked-container">
+			<div class="locked-box">
+				<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+					<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+				</svg>
+				<h2>此文章受密码保护</h2>
+				<p>请输入密码访问</p>
+				<input type="password" id="post-password" placeholder="输入密码" />
+				<button id="unlock-btn">解锁</button>
+				<p id="error-msg" class="error"></p>
+			</div>
+		</div>
+
+		<script define:vars={{ password, postId }}>
+			(function() {
+				const storedPassword = localStorage.getItem('unlocked_' + postId);
+
+				if (storedPassword === password) {
+					document.getElementById('locked-content').style.display = 'block';
+					document.getElementById('password-form').style.display = 'none';
+				} else {
+					document.getElementById('locked-content').style.display = 'none';
+					document.getElementById('password-form').style.display = 'flex';
+				}
+
+				document.getElementById('unlock-btn').addEventListener('click', function() {
+					const input = document.getElementById('post-password');
+					if (input.value === password) {
+						localStorage.setItem('unlocked_' + postId, password);
+						document.getElementById('locked-content').style.display = 'block';
+						document.getElementById('password-form').style.display = 'none';
+					} else {
+						document.getElementById('error-msg').textContent = '密码错误，请重试';
+					}
+				});
+
+				document.getElementById('post-password').addEventListener('keypress', function(e) {
+					if (e.key === 'Enter') {
+						document.getElementById('unlock-btn').click();
+					}
+				});
+			})();
+		</script>
+
+		<style>
+			.locked-container {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				min-height: 60vh;
+			}
+
+			.locked-box {
+				text-align: center;
+				padding: 3rem;
+				background: #f8fafc;
+				border-radius: 16px;
+				max-width: 400px;
+			}
+
+			.locked-box svg {
+				color: var(--gray);
+				margin-bottom: 1rem;
+			}
+
+			.locked-box h2 {
+				margin-bottom: 0.5rem;
+			}
+
+			.locked-box p {
+				color: var(--gray);
+				margin-bottom: 1.5rem;
+			}
+
+			.locked-box input {
+				width: 100%;
+				padding: 0.75rem 1rem;
+				border: 1px solid var(--border);
+				border-radius: 8px;
+				font-size: 1rem;
+				margin-bottom: 1rem;
+				outline: none;
+			}
+
+			.locked-box input:focus {
+				border-color: var(--primary);
+			}
+
+			.locked-box button {
+				width: 100%;
+				padding: 0.75rem;
+				background: var(--primary);
+				color: white;
+				border: none;
+				border-radius: 8px;
+				font-size: 1rem;
+				cursor: pointer;
+				transition: background 0.2s;
+			}
+
+			.locked-box button:hover {
+				background: #2563eb;
+			}
+
+			.error {
+				color: #ef4444 !important;
+				margin-top: 1rem !important;
+				margin-bottom: 0 !important;
+			}
+		</style>
+	) : (
+		<!-- 无密码保护的文章 -->
+		<article>
+			<header class="post-header">
+				<h1>{title}</h1>
+				<div class="meta">
+					<span class="date">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+							<line x1="16" y1="2" x2="16" y2="6"></line>
+							<line x1="8" y1="2" x2="8" y2="6"></line>
+							<line x1="3" y1="10" x2="21" y2="10"></line>
+						</svg>
+						{formattedDate}
+					</span>
+					<span class="separator">•</span>
+					<span class="read-time">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"></circle>
+							<polyline points="12 6 12 12 16 14"></polyline>
+						</svg>
+						约 {readingTime} 分钟阅读
+					</span>
+				</div>
+				{tags.length > 0 && (
+					<div class="tags">
+						{tags.map(tag => (
+							<a href={`/tags/${tag}`} class="tag">#{tag}</a>
+						))}
+					</div>
+				)}
+			</header>
 
 		<div class="article-container">
 			<aside class="toc">
