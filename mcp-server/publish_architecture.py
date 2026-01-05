@@ -1,0 +1,526 @@
+#!/usr/bin/env python3
+"""通过 MCP 业务逻辑创建架构文章"""
+
+import sys
+sys.path.insert(0, '.')
+
+from blog_tool import create_blog_post
+
+content = """# 从零搭建 AI 智能博客系统
+
+本文详细记录了如何从零搭建一个支持 AI 自动发布的博客系统。
+
+## 1. 技术选型
+
+### 为什么选择这个方案？
+
+| 技术 | 选择理由 |
+|------|----------|
+| **Astro** | 静态站点生成器，性能好，学习成本低 |
+| **Vercel** | 免费托管，自动部署，CDN 加速 |
+| **MCP** | AI 协议标准，支持工具调用 |
+| **GitHub** | 代码托管，版本控制 |
+
+### 架构图
+
+```
+用户 (Claude Desktop/Code)
+       │
+       │ 对话
+       ▼
+┌──────────────────┐
+│  AI 模型         │ ← 生成对话总结
+└────────┬─────────┘
+         │
+         │ MCP 工具调用
+         ▼
+┌──────────────────┐
+│  MCP Server      │ ← 接收请求，创建文件
+└────────┬─────────┘
+         │
+         │ git push
+         ▼
+┌──────────────────┐
+│  GitHub          │ ← 代码托管
+└────────┬─────────┘
+         │
+         │ 自动部署
+         ▼
+┌──────────────────┐
+│  Vercel          │ ← 静态托管，发布网站
+└──────────────────┘
+```
+
+## 2. 初始化项目
+
+### 2.1 创建 Astro 项目
+
+```bash
+# 创建 Astro 项目
+npm create astro@latest blog-system
+
+# 选择模板
+- Use a blog template? Yes
+- Install dependencies? Yes
+- Initialize git? Yes
+```
+
+### 2.2 项目结构
+
+```
+blog-system/
+├── src/
+│   ├── content/posts/    # 博客文章 (Markdown)
+│   ├── layouts/          # 页面布局
+│   ├── pages/            # 页面
+│   └── components/       # 组件
+├── public/               # 静态资源
+├── astro.config.mjs      # Astro 配置
+└── package.json
+```
+
+## 3. 功能增强
+
+### 3.1 文章 Frontmatter 定义
+
+```typescript
+// src/content/config.ts
+import { defineCollection, z } from 'astro:content';
+
+const posts = defineCollection({
+  type: 'content',
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    pubDate: z.coerce.date(),
+    tags: z.array(z.string()).default([]),
+    password: z.string().optional(), // 加密文章
+  }),
+});
+
+export const collections = { posts };
+```
+
+### 3.2 密码保护功能
+
+在文章 frontmatter 添加 `password` 字段即可加密。
+
+### 3.3 搜索功能
+
+首页搜索实现，支持按标题和标签实时过滤。
+
+### 3.4 TOC 目录
+
+自动提取文章标题生成目录，支持固定定位。
+
+### 3.5 RSS 订阅
+
+生成 RSS XML 订阅源，支持 RSS 阅读器订阅。
+
+## 4. 部署到 Vercel
+
+### 4.1 推送代码到 GitHub
+
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/你的用户名/blog-system-.git
+git push -u origin main
+```
+
+### 4.2 Vercel 部署
+
+1. 登录 https://vercel.com
+2. Import GitHub 仓库
+3. Framework Preset 选择 Astro
+4. Deploy
+
+**访问地址：** https://blog-system-six-sepia.vercel.app
+
+## 5. MCP Server 实现
+
+### 5.1 什么是 MCP？
+
+**MCP (Model Context Protocol)** 是 Anthropic 推出的 AI 工具调用协议标准。
+
+#### MCP 的核心概念
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    MCP 协议层次                          │
+├─────────────────────────────────────────────────────────┤
+│  应用层 (你的应用)                                       │
+│      │                                                  │
+│      ▼                                                  │
+│  MCP Server (我们写的)                                   │
+│      │                                                  │
+│      ▼                                                  │
+│  MCP Client (Claude Desktop/Code)                       │
+│      │                                                  │
+│      ▼                                                  │
+│  AI Model (Claude)                                      │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### MCP vs 传统 API
+
+| 特性 | 传统 API | MCP |
+|------|----------|-----|
+| 调用方式 | HTTP 请求 | 协议标准化 |
+| 工具发现 | 文档查询 | 自动发现 |
+| 参数格式 | 各家不同 | JSON Schema |
+| 状态管理 | 无 | Session 支持 |
+
+### 5.2 MCP 核心组件
+
+#### 1. Server
+
+MCP 服务器实例，所有工具的容器：
+
+```python
+from mcp.server import Server
+server = Server("blog-mcp-server")
+```
+
+#### 2. Tool
+
+工具定义，包含名称、描述和参数模式：
+
+```python
+from mcp.types import Tool
+
+Tool(
+    name="create_blog_post",
+    description="创建博客文章，自动保存并推送到 GitHub",
+    inputSchema={
+        "type": "object",
+        "properties": {
+            "title": {"type": "string", "description": "文章标题"},
+            "content": {"type": "string", "description": "文章内容"}
+        },
+        "required": ["title", "content"]
+    }
+)
+```
+
+#### 3. list_tools 装饰器
+
+AI 查询可用工具时调用。
+
+#### 4. call_tool 装饰器
+
+AI 调用工具时触发。
+
+### 5.3 JSON-RPC 2.0 协议
+
+MCP 基于 **JSON-RPC 2.0** 协议通信：
+
+```json
+// 请求
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "create_blog_post",
+    "arguments": {"title": "文章标题", "content": "内容"}
+  }
+}
+
+// 响应
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {"content": [{"type": "text", "text": "成功"}]}
+}
+```
+
+### 5.4 安装依赖
+
+```bash
+cd mcp-server
+pip install mcp>=1.0.0 PyGithub python-dotenv aiohttp
+```
+
+### 5.5 完整 Server 实现
+
+```python
+from mcp.server import Server
+from mcp.types import Tool, TextContent
+
+server = Server("blog-mcp-server")
+
+@server.list_tools()
+async def list_tools() -> list[Tool]:
+    return [
+        Tool(
+            name="create_blog_post",
+            description="创建博客文章，自动保存并推送到 GitHub",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "content": {"type": "string"},
+                    "tags": {"type": "array", "items": {"type": "string"}}
+                },
+                "required": ["title", "content"]
+            }
+        ),
+        Tool(
+            name="upload_image",
+            description="上传图片到博客",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "filename": {"type": "string"},
+                    "content": {"type": "string"}
+                },
+                "required": ["filename", "content"]
+            }
+        )
+    ]
+
+@server.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+    if name == "create_blog_post":
+        result = create_blog_post(...)
+        return [TextContent(type="text", text=result)]
+```
+
+### 5.6 业务逻辑实现
+
+```python
+class BlogPublisher:
+    def create_post(self, title, content, tags=None, description=""):
+        # 1. 生成文件名
+        filename = f"{date}-{title}.md"
+        # 2. 写入 Markdown
+        filepath.write_text(markdown_content)
+        # 3. Git 提交
+        subprocess.run(["git", "add", str(filepath)])
+        subprocess.run(["git", "commit", "-m", f"Add post: {title}"])
+        subprocess.run(["git", "push"])
+        return {"success": True, "filename": filename}
+
+    def upload_image(self, filename, base64_content):
+        # 解码并保存图片
+        image_data = base64.b64decode(base64_content)
+        filepath.write_bytes(image_data)
+        # Git 提交
+        subprocess.run(["git", "add", str(filepath)])
+        subprocess.run(["git", "commit", "-m", f"Add image: {filename}"])
+        subprocess.run(["git", "push"])
+        return {"success": True, "path": f"./images/{filename}"}
+```
+
+### 5.7 传输模式
+
+MCP 支持两种传输模式：
+
+#### 1. Stdio 模式（标准输入输出）
+
+用于**本地调用**，Claude Desktop 直接通过 stdin/stdout 与 Server 通信。
+
+**优点：** 简单直接，无需网络配置
+
+**缺点：** 只能本地使用
+
+#### 2. HTTP + SSE 模式
+
+用于**远程调用**，通过 HTTP 传输。
+
+**SSE (Server-Sent Events)：**
+- 单向通信：Server → Client
+- 基于 HTTP 长连接
+- 自动重连机制
+- 适合实时推送
+
+```bash
+python server.py --mode http --port 8080
+```
+
+## 6. 远程访问：Cloudflare Tunnel
+
+### 6.1 问题背景
+
+家庭服务器在内网，外部无法直接访问。
+
+### 6.2 解决方案：内网穿透
+
+```
+┌─────────────┐                        ┌─────────────┐
+│ 家庭服务器   │ ─── 加密隧道 ─────────►│  Cloudflare │
+└─────────────┘                        └──────┬──────┘
+                                               │
+                                               ▼
+                                         ┌─────────────┐
+                                         │  公网域名    │
+                                         │ trycloudflare│
+                                         └──────┬──────┘
+                                                │
+                                                ▼
+┌─────────────┐                        ┌─────────────┐
+│ 家庭服务器   │ ◄─────────────────── │  远程设备    │
+│ (内网 IP)   │ ◄──── HTTPS ───────── │ (外网)       │
+└─────────────┘                        └─────────────┘
+```
+
+### 6.3 Cloudflare Tunnel 原理
+
+1. cloudflared 进程在家庭服务器运行
+2. 与 Cloudflare 建立持久 TLS 连接
+3. Cloudflare 分配临时域名: xxx.trycloudflare.com
+4. 外部请求 → Cloudflare → 隧道 → 家庭服务器
+
+**技术特点：**
+- 零配置公网访问
+- 自动 HTTPS（Cloudflare 证书）
+- DDoS 防护
+- 免费使用
+
+### 6.4 安装 cloudflared
+
+**Linux (WSL):**
+
+```bash
+wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
+sudo chmod +x /usr/local/bin/cloudflared
+cloudflared --version
+```
+
+### 6.5 启动 Tunnel
+
+**临时测试：**
+
+```bash
+# 确保 MCP 服务先启动
+python server.py --mode http
+
+# 新终端启动 tunnel
+cloudflared tunnel --url http://localhost:8080
+```
+
+输出：
+```
+INF The tunnel has started!
+INF Visit https://random-name.trycloudflare.com
+```
+
+**后台服务（生产环境）：**
+
+创建 systemd 服务实现开机自启。
+
+### 6.6 其他内网穿透方案对比
+
+| 方案 | 成本 | 难度 | 稳定性 |
+|------|------|------|--------|
+| **Cloudflare Tunnel** | 免费 | 低 | 高 |
+| **Ngrok** | 免费/付费 | 低 | 高 |
+| **Frp** | 需 VPS | 中 | 高 |
+| **ZeroTier** | 免费 | 中 | 中 |
+
+## 7. 配置远程 AI 客户端
+
+### 7.1 Claude Desktop 配置
+
+```json
+{
+  "mcpServers": {
+    "blog-remote": {
+      "url": "https://random-name.trycloudflare.com/sse"
+    }
+  }
+}
+```
+
+### 7.2 Claude Code CLI 配置
+
+```bash
+claude mcp add blog-remote -s http --url "https://random-name.trycloudflare.com"
+```
+
+## 8. 功能特性
+
+### 已实现功能
+
+- Markdown 文章管理
+- 标签分类
+- 搜索功能
+- TOC 目录
+- 阅读时间估算
+- RSS 订阅
+- 密码保护
+- 图片上传
+- MCP 自动化发布
+
+## 9. 常用命令
+
+```bash
+# 开发
+npm run dev
+
+# 构建
+npm run build
+
+# MCP 本地模式
+python server.py
+
+# MCP HTTP 模式
+python server.py --mode http
+
+# 启动 tunnel
+cloudflared tunnel --url http://localhost:8080
+```
+
+## 10. 总结
+
+### 技术栈总结
+
+| 层级 | 技术 | 作用 |
+|------|------|------|
+| 前端 | Astro | 静态站点生成 |
+| 托管 | Vercel | 免费部署托管 |
+| AI 协议 | MCP | 工具调用标准 |
+| 代码托管 | GitHub | 版本控制 |
+| 内网穿透 | Cloudflare | 远程访问 |
+
+### 核心优势
+
+1. **AI 集成** - 通过 MCP，AI 可以自动创建和发布文章
+2. **零运维** - Vercel 自动部署，无需服务器
+3. **免费托管** - Vercel 免费层够个人使用
+4. **远程访问** - Cloudflare Tunnel 实现任意设备访问
+5. **扩展性强** - 可以继续添加新功能
+
+### 后续优化方向
+
+- 添加评论系统 (Giscus/Utterances)
+- 部署到私有服务器
+- 添加图片图床 (Cloudinary/Imgur)
+- 多作者支持
+- CI/CD 优化
+
+---
+
+**博客地址：** https://blog-system-six-sepia.vercel.app
+
+**RSS 订阅：** https://blog-system-six-sepia.vercel.app/rss.xml
+
+**GitHub：** https://github.com/LiCong-22/blog-system-"""
+
+result = create_blog_post(
+    title='从零搭建 AI 智能博客系统',
+    content=content,
+    tags=['博客', 'Astro', 'MCP', 'AI', 'Vercel'],
+    description='详细记录如何用 Astro + Vercel 搭建博客，并实现 AI 自动发布功能'
+)
+
+print("="*50)
+print("MCP 创建博客结果:")
+print("="*50)
+print(f"文件名: {result['filename']}")
+print(f"路径: {result['filepath']}")
+print(f"URL: {result['url']}")
+print("="*50)
