@@ -5,6 +5,7 @@
 
 import os
 import subprocess
+import base64
 from datetime import datetime
 from pathlib import Path
 from github import Github
@@ -21,6 +22,7 @@ class BlogPublisher:
         self.github_token = os.getenv("GITHUB_TOKEN")
         self.github_owner = os.getenv("GITHUB_OWNER", "LiCong-22")
         self.github_repo = os.getenv("GITHUB_REPO", "blog-system-")
+        self.images_dir = Path(self.blog_path) / "src" / "content" / "posts" / "images"
 
     def generate_filename(self, title: str) -> str:
         """根据标题生成文件名"""
@@ -85,6 +87,32 @@ tags: {tags_str}
 
         return posts
 
+    def upload_image(self, filename: str, base64_content: str) -> dict:
+        """上传图片到 posts/images 目录"""
+        # 创建 images 目录
+        self.images_dir.mkdir(parents=True, exist_ok=True)
+
+        # 解码 base64 图片
+        image_data = base64.b64decode(base64_content)
+
+        # 保存图片文件
+        filepath = self.images_dir / filename
+        filepath.write_bytes(image_data)
+
+        # Git 操作
+        os.chdir(self.blog_path)
+        subprocess.run(["git", "add", str(filepath)], check=True, capture_output=True)
+        subprocess.run(["git", "commit", "-m", f"Add image: {filename}"], check=True, capture_output=True)
+        subprocess.run(["git", "push"], check=True, capture_output=True)
+
+        relative_path = f"./images/{filename}"
+        return {
+            "success": True,
+            "filename": filename,
+            "path": relative_path,
+            "url": f"https://github.com/{self.github_owner}/{self.github_repo}/blob/main/src/content/posts/images/{filename}"
+        }
+
 
 BLOG_PUBLISHER = BlogPublisher()
 
@@ -98,3 +126,8 @@ def list_blog_posts() -> dict:
     """列出所有博客文章"""
     posts = BLOG_PUBLISHER.list_posts()
     return {"posts": posts, "count": len(posts)}
+
+
+def upload_image(filename: str, base64_content: str) -> dict:
+    """上传图片到博客"""
+    return BLOG_PUBLISHER.upload_image(filename, base64_content)

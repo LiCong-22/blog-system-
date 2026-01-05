@@ -35,6 +35,20 @@ tags: ["标签1", "标签2"]
 3. 提交到 GitHub：`git add` → `git commit` → `git push`
 4. Vercel 会自动部署
 
+## 上传图片
+
+MCP 提供 `upload_image` 工具上传图片：
+
+1. 先调用 `upload_image` 上传图片（Base64 编码）
+2. 得到返回的路径，如 `./images/diagram.png`
+3. 在文章中引用：
+
+```markdown
+![架构图](./images/diagram.png)
+```
+
+图片保存在 `src/content/posts/images/` 目录。
+
 ## 加密文章
 
 如需加密文章，在 frontmatter 中添加 `password` 字段：

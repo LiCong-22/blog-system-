@@ -15,7 +15,7 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
-from blog_tool import create_blog_post, list_blog_posts
+from blog_tool import create_blog_post, list_blog_posts, upload_image
 
 
 server = Server("blog-mcp-server")
@@ -42,6 +42,18 @@ async def list_tools() -> list[Tool]:
             name="list_blog_posts",
             description="列出所有博客文章",
             inputSchema={"type": "object", "properties": {}}
+        ),
+        Tool(
+            name="upload_image",
+            description="上传图片到博客，保存到 posts/images 目录。返回图片路径，可在 Markdown 中使用。",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "filename": {"type": "string", "description": "文件名，如 'diagram.png'"},
+                    "content": {"type": "string", "description": "图片的 Base64 编码内容"}
+                },
+                "required": ["filename", "content"]
+            }
         )
     ]
 
@@ -72,6 +84,24 @@ GitHub: {result['url']}
                 return [TextContent(type="text", text="暂无文章")]
             posts_list = "\n".join([f"- **{p['title']}**" for p in result["posts"]])
             return [TextContent(type="text", text=f"已有 {result['count']} 篇文章：\n\n{posts_list}")]
+
+        elif name == "upload_image":
+            result = upload_image(
+                filename=arguments["filename"],
+                base64_content=arguments["content"]
+            )
+            response = f"""图片已上传！
+
+**文件**: {result['filename']}
+**路径**: {result['path']}
+
+GitHub: {result['url']}
+
+在 Markdown 中使用：
+```
+![描述]({result['path']})
+```"""
+            return [TextContent(type="text", text=response)]
 
         return [TextContent(type="text", text=f"未知工具: {name}")]
     except Exception as e:
