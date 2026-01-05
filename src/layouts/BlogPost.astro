@@ -262,7 +262,7 @@ const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 	}
 
 	.tag:hover {
-		background: #dbeafe;
+		background: var(--card);
 	}
 
 	.article-container {
@@ -276,10 +276,12 @@ const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 		width: 220px;
 		max-height: calc(100vh - 8rem);
 		padding: 1rem 1.5rem;
-		background: #f8fafc;
+		background: var(--card);
 		border-radius: 12px;
 		display: none;
 		overflow-y: auto;
+		border: 1px solid var(--border);
+		transition: background-color 0.3s, border-color 0.3s;
 	}
 
 	.toc h3 {
@@ -290,7 +292,7 @@ const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 		letter-spacing: 0.05em;
 		position: sticky;
 		top: 0;
-		background: #f8fafc;
+		background: var(--card);
 		padding-bottom: 0.5rem;
 	}
 
@@ -316,12 +318,12 @@ const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 
 	.toc a:hover {
 		color: var(--primary);
-		background: #eff6ff;
+		background: var(--border);
 	}
 
 	.toc a.active {
 		color: var(--primary);
-		background: #eff6ff;
+		background: var(--border);
 		font-weight: 500;
 	}
 
@@ -393,9 +395,11 @@ const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 	.locked-box {
 		text-align: center;
 		padding: 3rem;
-		background: #f8fafc;
+		background: var(--card);
 		border-radius: 16px;
 		max-width: 400px;
+		border: 1px solid var(--border);
+		transition: background-color 0.3s, border-color 0.3s;
 	}
 
 	.locked-box svg {
