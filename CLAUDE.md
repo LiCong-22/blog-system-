@@ -27,12 +27,29 @@ title: "文章标题"
 description: "简短描述"
 pubDate: 2026-01-05
 tags: ["标签1", "标签2"]
+# password: "密码"    # 可选：加密文章
 ---
 
 # 文章内容...
 ```
 3. 提交到 GitHub：`git add` → `git commit` → `git push`
 4. Vercel 会自动部署
+
+## 加密文章
+
+如需加密文章，在 frontmatter 中添加 `password` 字段：
+
+```markdown
+---
+title: "私有文章"
+description: "描述"
+pubDate: 2026-01-05
+tags: ["私有"]
+password: "lc8814"
+---
+```
+
+访问时需要输入密码解锁，解锁状态保存在 localStorage。
 
 ## 常用命令
 
@@ -44,4 +61,5 @@ npm run build    # 构建生产版本
 ## 链接
 
 - 博客：https://my-blog-system-tau.vercel.app
+- RSS：https://my-blog-system-tau.vercel.app/rss.xml
 - 仓库：https://github.com/LiCong-22/blog-system-
