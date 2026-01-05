@@ -19,164 +19,7 @@ const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 ---
 
 <Layout title={title} description={description}>
-	{password ? (
-		<!-- 密码保护的文章 -->
-		<div id="locked-content" style="display: none;">
-			<article>
-				<header class="post-header">
-					<h1>{title}</h1>
-					<div class="meta">
-						<span class="date">
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-								<line x1="16" y1="2" x2="16" y2="6"></line>
-								<line x1="8" y1="2" x2="8" y2="6"></line>
-								<line x1="3" y1="10" x2="21" y2="10"></line>
-							</svg>
-							{formattedDate}
-						</span>
-						<span class="separator">•</span>
-						<span class="read-time">
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<circle cx="12" cy="12" r="10"></circle>
-								<polyline points="12 6 12 12 16 14"></polyline>
-							</svg>
-							约 {readingTime} 分钟阅读
-						</span>
-					</div>
-					{tags.length > 0 && (
-						<div class="tags">
-							{tags.map(tag => (
-								<a href={`/tags/${tag}`} class="tag">#{tag}</a>
-							))}
-						</div>
-					)}
-				</header>
-				<div class="article-container">
-					<aside class="toc">
-						<h3>目录</h3>
-						<nav id="toc-nav"></nav>
-					</aside>
-					<div class="content">
-						<slot />
-					</div>
-				</div>
-			</article>
-		</div>
-
-		<!-- 密码输入界面 -->
-		<div id="password-form" class="locked-container">
-			<div class="locked-box">
-				<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-					<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-				</svg>
-				<h2>此文章受密码保护</h2>
-				<p>请输入密码访问</p>
-				<input type="password" id="post-password" placeholder="输入密码" />
-				<button id="unlock-btn">解锁</button>
-				<p id="error-msg" class="error"></p>
-			</div>
-		</div>
-
-		<script define:vars={{ password, postId }}>
-			(function() {
-				const storedPassword = localStorage.getItem('unlocked_' + postId);
-
-				if (storedPassword === password) {
-					document.getElementById('locked-content').style.display = 'block';
-					document.getElementById('password-form').style.display = 'none';
-				} else {
-					document.getElementById('locked-content').style.display = 'none';
-					document.getElementById('password-form').style.display = 'flex';
-				}
-
-				document.getElementById('unlock-btn').addEventListener('click', function() {
-					const input = document.getElementById('post-password');
-					if (input.value === password) {
-						localStorage.setItem('unlocked_' + postId, password);
-						document.getElementById('locked-content').style.display = 'block';
-						document.getElementById('password-form').style.display = 'none';
-					} else {
-						document.getElementById('error-msg').textContent = '密码错误，请重试';
-					}
-				});
-
-				document.getElementById('post-password').addEventListener('keypress', function(e) {
-					if (e.key === 'Enter') {
-						document.getElementById('unlock-btn').click();
-					}
-				});
-			})();
-		</script>
-
-		<style>
-			.locked-container {
-				display: flex;
-				justify-content: center;
-				align-items: center;
-				min-height: 60vh;
-			}
-
-			.locked-box {
-				text-align: center;
-				padding: 3rem;
-				background: #f8fafc;
-				border-radius: 16px;
-				max-width: 400px;
-			}
-
-			.locked-box svg {
-				color: var(--gray);
-				margin-bottom: 1rem;
-			}
-
-			.locked-box h2 {
-				margin-bottom: 0.5rem;
-			}
-
-			.locked-box p {
-				color: var(--gray);
-				margin-bottom: 1.5rem;
-			}
-
-			.locked-box input {
-				width: 100%;
-				padding: 0.75rem 1rem;
-				border: 1px solid var(--border);
-				border-radius: 8px;
-				font-size: 1rem;
-				margin-bottom: 1rem;
-				outline: none;
-			}
-
-			.locked-box input:focus {
-				border-color: var(--primary);
-			}
-
-			.locked-box button {
-				width: 100%;
-				padding: 0.75rem;
-				background: var(--primary);
-				color: white;
-				border: none;
-				border-radius: 8px;
-				font-size: 1rem;
-				cursor: pointer;
-				transition: background 0.2s;
-			}
-
-			.locked-box button:hover {
-				background: #2563eb;
-			}
-
-			.error {
-				color: #ef4444 !important;
-				margin-top: 1rem !important;
-				margin-bottom: 0 !important;
-			}
-		</style>
-	) : (
+	{!password ? (
 		<!-- 无密码保护的文章 -->
 		<article>
 			<header class="post-header">
@@ -209,55 +52,140 @@ const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 				)}
 			</header>
 
-		<div class="article-container">
-			<aside class="toc">
-				<h3>目录</h3>
-				<nav id="toc-nav">
-					<ul>
-						<li><a href="#">顶部</a></li>
-					</ul>
-				</nav>
-			</aside>
+			<div class="article-container">
+				<aside class="toc">
+					<h3>目录</h3>
+					<nav id="toc-nav"></nav>
+				</aside>
+				<div class="content">
+					<slot />
+				</div>
+			</div>
+		</article>
+	) : (
+		<!-- 密码保护的文章 -->
+		<article>
+			<header class="post-header">
+				<h1>{title}</h1>
+				<div class="meta">
+					<span class="date">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+							<line x1="16" y1="2" x2="16" y2="6"></line>
+							<line x1="8" y1="2" x2="8" y2="6"></line>
+							<line x1="3" y1="10" x2="21" y2="10"></line>
+						</svg>
+						{formattedDate}
+					</span>
+					<span class="separator">•</span>
+					<span class="read-time">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"></circle>
+							<polyline points="12 6 12 12 16 14"></polyline>
+						</svg>
+						约 {readingTime} 分钟阅读
+					</span>
+				</div>
+				{tags.length > 0 && (
+					<div class="tags">
+						{tags.map(tag => (
+							<a href={`/tags/${tag}`} class="tag">#{tag}</a>
+						))}
+					</div>
+				)}
+			</header>
+			<div class="article-container">
+				<aside class="toc">
+					<h3>目录</h3>
+					<nav id="toc-nav-locked"></nav>
+				</aside>
+				<div class="content" id="locked-content" style="display: none;">
+					<slot />
+				</div>
+			</div>
+		</article>
 
-			<div class="content">
-				<slot />
+		<!-- 密码输入界面 -->
+		<div id="password-form" class="locked-container">
+			<div class="locked-box">
+				<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+					<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+				</svg>
+				<h2>此文章受密码保护</h2>
+				<p>请输入密码访问</p>
+				<input type="password" id="post-password" placeholder="输入密码" />
+				<button id="unlock-btn">解锁</button>
+				<p id="error-msg" class="error"></p>
 			</div>
 		</div>
 
-		<footer class="post-footer">
-			<div class="share">
-				<span>分享文章：</span>
-				<a href={`https://twitter.com/intent/tweet?text=${title}`} target="_blank" rel="noopener">
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-						<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-					</svg>
-				</a>
-			</div>
-		</footer>
-	</article>
+		<!-- 密码数据（隐藏） -->
+		<span id="password-data" data-password={password} data-postid={postId} style="display: none;"></span>
+	)}
 </Layout>
 
 <script>
+	// 检查是否有密码保护
+	const passwordData = document.getElementById('password-data');
+	if (passwordData) {
+		const password = passwordData.dataset.password;
+		const postId = passwordData.dataset.postid;
+		const storedPassword = localStorage.getItem('unlocked_' + postId);
+
+		if (storedPassword === password) {
+			document.getElementById('locked-content').style.display = 'block';
+			document.getElementById('password-form').style.display = 'none';
+		} else {
+			document.getElementById('locked-content').style.display = 'none';
+			document.getElementById('password-form').style.display = 'flex';
+		}
+
+		document.getElementById('unlock-btn').addEventListener('click', function() {
+			const input = document.getElementById('post-password');
+			if (input.value === password) {
+				localStorage.setItem('unlocked_' + postId, password);
+				document.getElementById('locked-content').style.display = 'block';
+				document.getElementById('password-form').style.display = 'none';
+			} else {
+				document.getElementById('error-msg').textContent = '密码错误，请重试';
+			}
+		});
+
+		document.getElementById('post-password').addEventListener('keypress', function(e) {
+			if (e.key === 'Enter') {
+				document.getElementById('unlock-btn').click();
+			}
+		});
+	}
+</script>
+
+<script>
 	// 生成目录
-	document.addEventListener('DOMContentLoaded', () => {
+	document.addEventListener('DOMContentLoaded', function() {
+		const tocNavId = document.getElementById('toc-nav') ? 'toc-nav' : 'toc-nav-locked';
+		const tocNav = document.getElementById(tocNavId);
 		const content = document.querySelector('.content');
-		const tocNav = document.getElementById('toc-nav');
 
 		if (content && tocNav) {
 			const headings = content.querySelectorAll('h2, h3');
-			const ul = tocNav.querySelector('ul') || document.createElement('ul');
+			const ul = document.createElement('ul');
 
 			if (headings.length > 0) {
 				tocNav.style.display = 'block';
 				ul.innerHTML = '';
 
+				const topLi = document.createElement('li');
+				topLi.innerHTML = '<a href="#" onclick="event.preventDefault(); window.scrollTo({top: 0});">顶部</a>';
+				ul.appendChild(topLi);
+
 				headings.forEach((heading, index) => {
-					const id = heading.id || `heading-${index}`;
+					const id = heading.id || 'heading-' + index;
 					heading.id = id;
 
 					const li = document.createElement('li');
 					const a = document.createElement('a');
-					a.href = `#${id}`;
+					a.href = '#' + id;
 					a.textContent = heading.textContent || '';
 					a.style.paddingLeft = heading.tagName === 'H3' ? '1.5rem' : '0.5rem';
 
@@ -265,22 +193,20 @@ const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 					ul.appendChild(li);
 				});
 
-				if (!tocNav.querySelector('ul')) {
-					tocNav.appendChild(ul);
-				}
+				tocNav.appendChild(ul);
 
 				// 高亮当前阅读位置
-				const observer = new IntersectionObserver((entries) => {
-					entries.forEach(entry => {
+				const observer = new IntersectionObserver(function(entries) {
+					entries.forEach(function(entry) {
 						if (entry.isIntersecting) {
-							ul.querySelectorAll('a').forEach(a => a.classList.remove('active'));
-							const activeLink = ul.querySelector(`a[href="#${entry.target.id}"]`);
+							ul.querySelectorAll('a').forEach(function(a) { a.classList.remove('active'); });
+							const activeLink = ul.querySelector('a[href="#' + entry.target.id + '"]');
 							if (activeLink) activeLink.classList.add('active');
 						}
 					});
 				}, { rootMargin: '-20% 0px -60% 0px' });
 
-				headings.forEach(h => observer.observe(h));
+				headings.forEach(function(h) { observer.observe(h); });
 			}
 		}
 	});
@@ -447,6 +373,72 @@ const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 
 	.share a:hover {
 		color: var(--primary);
+	}
+
+	/* 密码保护样式 */
+	.locked-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 60vh;
+	}
+
+	.locked-box {
+		text-align: center;
+		padding: 3rem;
+		background: #f8fafc;
+		border-radius: 16px;
+		max-width: 400px;
+	}
+
+	.locked-box svg {
+		color: var(--gray);
+		margin-bottom: 1rem;
+	}
+
+	.locked-box h2 {
+		margin-bottom: 0.5rem;
+	}
+
+	.locked-box p {
+		color: var(--gray);
+		margin-bottom: 1.5rem;
+	}
+
+	.locked-box input {
+		width: 100%;
+		padding: 0.75rem 1rem;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		font-size: 1rem;
+		margin-bottom: 1rem;
+		outline: none;
+	}
+
+	.locked-box input:focus {
+		border-color: var(--primary);
+	}
+
+	.locked-box button {
+		width: 100%;
+		padding: 0.75rem;
+		background: var(--primary);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 1rem;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.locked-box button:hover {
+		background: #2563eb;
+	}
+
+	.error {
+		color: #ef4444 !important;
+		margin-top: 1rem !important;
+		margin-bottom: 0 !important;
 	}
 
 	@media (min-width: 1200px) {
