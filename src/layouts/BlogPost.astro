@@ -274,10 +274,12 @@ const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 		left: calc(50% - 620px);
 		top: 6rem;
 		width: 180px;
+		max-height: calc(100vh - 8rem);
 		padding: 1rem 1.5rem;
 		background: #f8fafc;
 		border-radius: 12px;
 		display: none;
+		overflow-y: auto;
 	}
 
 	.toc h3 {
@@ -286,6 +288,10 @@ const postId = Astro.url.pathname.split('/').filter(Boolean).pop() || '';
 		margin-bottom: 1rem;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
+		position: sticky;
+		top: 0;
+		background: #f8fafc;
+		padding-bottom: 0.5rem;
 	}
 
 	.toc ul {
